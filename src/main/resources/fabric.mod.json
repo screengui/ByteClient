@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "byte-client",
+	"version": "${version}",
+	"name": "Byte Client",
+	"description": "A client-side utility mod.",
+	"authors": [
+		"PurpleApple9562"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/byte-client/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.byteclient.ByteClient"
+		],
+		"client": [
+			"com.byteclient.client.ByteClientClient"
+		]
+	},
+	"mixins": [
+		"byte-client.mixins.json",
+		{
+			"config": "byte-client.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
