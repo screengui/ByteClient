@@ -1,0 +1,352 @@
+You are working on my Minecraft client mod, Byte Client. Please review the existing implementation before making changes and preserve the current architecture and functionality wherever possible.
+
+I want you to implement the following fixes and improvements.
+
+1. FPS Boost / Performance Mode Cleanup
+
+FPS Boost
+
+Remove the FPS Cap setting from the FPS Boost module.
+
+Minecraft already provides an in-game FPS limit setting, so Byte Client does not need to duplicate it. Remove the setting and all related code, UI elements, configuration handling, and references.
+
+Performance Mode
+
+The Performance Mode module currently appears to duplicate the settings from FPS Boost, which is unnecessary.
+
+Redesign this so that Performance Mode does not independently duplicate every FPS Boost setting.
+
+Ideally:
+
+- Performance Mode should provide a higher-level optimization profile.
+- The optimization profile should control the appropriate performance optimizations internally.
+- Avoid displaying duplicate settings that already exist in FPS Boost.
+- Do not create two separate settings that control the exact same behavior unless there is a clear reason.
+- If an optimization is shared between the two modules, centralize the underlying logic rather than duplicating the implementation.
+
+Make sure enabling/disabling one module does not unexpectedly break the other.
+
+---
+
+2. Keystrokes Module Persistence
+
+The Keystrokes module currently saves its HUD position correctly, but its enabled/disabled state is not being restored correctly.
+
+Fix module persistence so that all modules behave consistently:
+
+- If a module was enabled when the client was closed, it should automatically be enabled when the client starts.
+- If it was disabled, it should remain disabled.
+- Keystrokes should follow the exact same persistence system as the other modules.
+- Do not create a Keystrokes-specific workaround if the existing module persistence system can be fixed properly.
+
+Also verify that every current module correctly participates in module-state saving/loading.
+
+---
+
+3. Customizable Low Fire & Low Shield
+
+Make Low Fire and Low Shield customizable rather than hard-coded.
+
+The user should be able to configure how low the fire/shield overlay is positioned or how much of it is reduced.
+
+Use the existing Byte Client settings/UI conventions so these settings feel consistent with the rest of the client.
+
+Make sure:
+
+- The settings are saved.
+- They are restored when the client starts.
+- Changes apply immediately where practical.
+- The values have sensible minimum/maximum limits.
+- The settings work correctly at different GUI scales/resolutions.
+
+---
+
+4. Scrolling for Oversized Settings Panels
+
+When the UI is heavily scaled in or a module has many settings, some options currently extend outside the visible window.
+
+Fix the settings UI by adding a scrollable area inside the relevant window/panel.
+
+Requirements:
+
+- Users must be able to scroll through all available settings.
+- Nothing should be inaccessible because of the screen size or UI scale.
+- The scrollbar should only appear/become useful when the content exceeds the available space.
+- Mouse-wheel scrolling should work naturally.
+- Touch/drag scrolling should work if the existing UI framework supports it.
+- The header/title/buttons outside the scrollable content should remain in place.
+- Avoid allowing content to render outside the panel.
+- Make sure clipping/scissoring is handled correctly.
+- Test this with modules containing both few and many settings.
+- It must work correctly with Byte Client's Adaptive Interface Scaling.
+
+Do not simply make the window larger. The goal is for the interface to remain usable on smaller screens and at extreme UI scales.
+
+---
+
+5. Motion Blur
+
+The current Motion Blur module does not function correctly. It simply places a blur over the entire screen.
+
+Implement actual motion-based blur rather than a permanent screen blur.
+
+The effect should:
+
+- Become noticeable when the camera/view moves.
+- Be reduced or absent when the camera is stationary.
+- Create a motion-trail/temporal-blur effect based on previous frames or camera movement.
+- Not simply blur the entire screen constantly.
+- Avoid making static menus/HUD elements unnecessarily blurry if the rendering architecture allows this.
+- Have a reasonable performance impact for a Minecraft client.
+
+If the current rendering implementation is fundamentally unsuitable for proper motion blur, refactor it rather than adding another full-screen blur layer.
+
+Also make sure Motion Blur can be safely enabled/disabled without causing rendering issues.
+
+---
+
+6. Client Opening & Closing Animations
+
+Add customizable animations when Byte Client's main UI opens and closes.
+
+Provide an animation setting that allows the user to choose between several styles, for example:
+
+- None
+- Fade
+- Slide
+- Scale/Zoom
+- Slide + Fade
+- Scale + Fade
+
+The exact animation list can be adjusted if some options do not make sense with the existing UI architecture.
+
+Requirements:
+
+- Opening and closing animations should be separate if practical.
+- The user should be able to disable animations entirely.
+- Animation duration should feel smooth and not unnecessarily slow.
+- Animations should not interfere with clicking or input.
+- Closing the menu should still work correctly while an animation is playing.
+- Avoid introducing unnecessary performance overhead.
+
+If possible, add a UI Animation Speed/Duration setting so users can customize how fast animations are.
+
+---
+
+7. Configuration Folder & Migration
+
+Refactor Byte Client's configuration system so that client configuration files are stored inside a dedicated folder instead of being scattered in the main Minecraft directory.
+
+For example, use a structure similar to:
+
+"config/byteclient/"
+
+Keep the exact filenames and structure consistent with the existing configuration system.
+
+Backwards compatibility is REQUIRED.
+
+Users who already have an older Byte Client configuration should not lose their settings.
+
+On startup:
+
+1. Check for the new configuration location.
+2. If a new configuration exists, use it.
+3. If only an old configuration exists, automatically migrate it to the new location.
+4. Preserve module states, HUD positions, settings, keybinds, themes, and other existing configuration data.
+5. Avoid overwriting newer configuration with an older migrated configuration.
+6. Ideally create the new configuration first and then handle migration safely.
+7. Make the migration process robust against malformed or partially missing old configuration files.
+
+Do not remove support for old configs immediately. Existing users should be able to update Byte Client without manually moving files.
+
+---
+
+8. General Configuration Consistency
+
+Review the entire configuration system while implementing the above changes.
+
+Byte Client currently has:
+
+- Module enabled/disabled state saving
+- HUD position saving
+- Settings saving
+- Keybinds
+- Theme selection
+- Adaptive Interface Scaling
+- HUD editor settings
+
+Make sure these all use a consistent configuration system rather than each feature independently implementing its own saving/loading behavior.
+
+Avoid duplicate configuration logic.
+
+If a setting/module is added in a future update, the configuration system should also handle missing values gracefully by falling back to defaults.
+
+---
+
+9. HUD System Improvements
+
+Review all HUD modules and make sure they behave consistently.
+
+Current HUD modules include:
+
+- CPS Display
+  - HUD Opacity
+- FPS Display
+  - HUD Opacity
+- Armor Status
+  - HUD Opacity
+  - Vertical/Horizontal layout
+- Keystrokes
+  - HUD Opacity
+- Ping Display
+  - HUD Opacity
+- Coordinates
+  - HUD Opacity
+- Direction
+  - HUD Opacity
+- Item Durability
+  - HUD Opacity
+
+Make sure:
+
+- Every HUD module can be positioned through the HUD Editor.
+- Positions persist after restarting the game.
+- Enabled/disabled states persist.
+- Opacity settings persist.
+- HUD elements remain within reasonable screen boundaries.
+- Adaptive Interface Scaling does not cause HUD elements to become inaccessible.
+- Changing Minecraft's resolution/window size does not permanently corrupt saved HUD positions.
+
+If the HUD system currently has duplicated positioning or rendering logic, centralize it where practical.
+
+---
+
+10. General UI Consistency
+
+Review the entire Byte Client UI for inconsistencies.
+
+The client should have a unified design across:
+
+- Main menu
+- Module list
+- Module settings
+- HUD Editor
+- Configuration screens
+- Dropdowns
+- Sliders
+- Toggles
+- Keybind controls
+
+Use the existing Byte Client theme system:
+
+- Byte Red
+- Ocean Blue
+- Neon Lime
+- Royal Purple
+
+Do not hard-code colors in individual screens if the theme system can provide them.
+
+Changing the theme should consistently update UI elements that are supposed to use the theme.
+
+---
+
+11. Adaptive Interface Scaling
+
+Byte Client already has Adaptive Interface Scaling.
+
+Make sure the new scrolling system, animations, HUD editor, settings panels, and module UI all respect it.
+
+Test particularly with:
+
+- Very small UI scale
+- Very large UI scale
+- Different Minecraft GUI scales
+- Smaller screens
+- Large screens
+- Different resolutions
+
+The interface should never make settings impossible to access simply because the UI has been scaled.
+
+---
+
+12. Code Quality & Architecture
+
+While making these changes:
+
+- Do not unnecessarily rewrite working systems.
+- Reuse existing utilities/components where possible.
+- Avoid duplicate implementations.
+- Keep module logic separate from UI logic.
+- Keep configuration logic centralized.
+- Use sensible defaults.
+- Handle missing configuration values gracefully.
+- Avoid hard-coded screen dimensions.
+- Avoid hard-coded positions where possible.
+- Avoid memory/resource leaks.
+- Avoid unnecessary per-frame allocations.
+- Make sure disabling a module properly cleans up its resources/rendering hooks.
+- Do not introduce dependencies unless they are genuinely necessary.
+
+Before finishing, search the project for old/duplicate implementations related to the changes above and remove obsolete code.
+
+---
+
+13. Testing Checklist
+
+After implementing everything, verify:
+
+Modules
+
+- [ ] FPS Boost no longer has an FPS Cap setting.
+- [ ] Performance Mode does not unnecessarily duplicate FPS Boost settings.
+- [ ] All module states persist correctly.
+- [ ] Keystrokes state persists correctly.
+- [ ] Low Fire is customizable.
+- [ ] Low Shield is customizable.
+- [ ] Motion Blur responds to actual movement.
+
+UI
+
+- [ ] Settings panels can scroll.
+- [ ] Settings remain accessible at extreme UI scales.
+- [ ] Opening animation works.
+- [ ] Closing animation works.
+- [ ] Animations can be disabled.
+- [ ] Animation settings persist.
+- [ ] Themes continue working.
+- [ ] Adaptive Interface Scaling works with the new UI.
+
+HUD
+
+- [ ] HUD positions persist.
+- [ ] HUD opacity persists.
+- [ ] Armor layout persists.
+- [ ] Module enabled states persist.
+- [ ] HUD elements remain usable after resolution/scale changes.
+
+Configuration
+
+- [ ] New configs are stored in the dedicated Byte Client config folder.
+- [ ] Existing old configs are detected.
+- [ ] Old configs migrate automatically.
+- [ ] No existing user settings are unnecessarily lost.
+- [ ] Missing settings fall back to defaults.
+- [ ] Malformed configs do not crash the client.
+
+---
+
+Important
+
+Before modifying code, inspect the existing project architecture and determine how modules, HUD elements, settings, rendering, animations, and configuration currently work.
+
+Do not blindly create new systems if an existing system can be improved and reused.
+
+Prioritize fixing the underlying architecture rather than adding patches specific to individual modules.
+
+After implementation, provide a concise summary of:
+
+1. What was changed.
+2. Any architectural changes made.
+3. Any configuration migration behavior.
+4. Any limitations or things that could not be implemented cleanly.
+5. Any files that were significantly modified.
