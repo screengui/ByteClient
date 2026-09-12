@@ -22,6 +22,12 @@ loom {
 	}
 }
 
+def supportedMinecraftVersions = ["1.21.11"]
+if (!supportedMinecraftVersions.contains(project.minecraft_version)) {
+	throw new GradleException("Unsupported Minecraft profile: ${project.minecraft_version}")
+}
+sourceSets.client.java.srcDir("src/client/java-${project.minecraft_version}")
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"

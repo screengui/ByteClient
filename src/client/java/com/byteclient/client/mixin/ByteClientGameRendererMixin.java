@@ -14,17 +14,9 @@ public final class ByteClientGameRendererMixin {
 	private void byteClient$applyMotionBlur(DeltaTracker deltaTracker, CallbackInfo callbackInfo) {
 		GameRenderer renderer = (GameRenderer) (Object) this;
 		if (ByteClientModules.isMotionBlurEnabled()
-				&& ByteClientModules.shouldApplyMotionBlur()
 				&& renderer.getMinecraft().level != null
 				&& renderer.getMinecraft().screen == null) {
-			var options = renderer.getMinecraft().options;
-			int originalRadius = options.menuBackgroundBlurriness().get();
-			options.menuBackgroundBlurriness().set(ByteClientModules.activeMotionBlurRadius());
-			try {
-				renderer.processBlurEffect();
-			} finally {
-				options.menuBackgroundBlurriness().set(originalRadius);
-			}
+			renderer.processBlurEffect();
 		}
 	}
 }

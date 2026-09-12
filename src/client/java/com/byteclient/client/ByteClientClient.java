@@ -17,7 +17,7 @@ public class ByteClientClient implements ClientModInitializer {
 				"key.byte-client.open_menu",
 				InputConstants.Type.KEYSYM,
 				InputConstants.KEY_RSHIFT,
-				KeyMapping.Category.register(com.byteclient.ByteClient.id("main"))
+				KeyMapping.Category.MISC
 		));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {

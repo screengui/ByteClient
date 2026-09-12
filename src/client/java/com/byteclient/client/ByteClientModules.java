@@ -88,6 +88,7 @@ private static float previousCameraYaw;
 private static float previousCameraPitch;
 private static float motionBlurStrength;
 private static boolean cameraSampled;
+	private static final String MOTION_BLUR_RENDERER_ID = "byte-client:motion_blur";
 
 	private ByteClientModules() {
 	}
@@ -240,7 +241,7 @@ private static boolean cameraSampled;
 		if (!ENABLED[2]) {
 			return inGameGamma;
 		}
-		return Math.max(inGameGamma, fullbrightLevel);
+		return Math.max(inGameGamma, fullbrightLevel * 0.25f);
 	}
 
 	public static int currentPing(Minecraft client) {
@@ -440,7 +441,19 @@ private static boolean cameraSampled;
 		updatePerformanceMode(client);
 		updateNoFog();
 		updateMotionBlur(client);
+		updateMotionBlurEffect(client);
 		updateSprint(client);
+	}
+
+	private static void updateMotionBlurEffect(Minecraft client) {
+		var renderer = client.gameRenderer;
+		boolean shouldRun = ENABLED[8] && client.level != null && client.screen == null;
+		boolean active = MOTION_BLUR_RENDERER_ID.equals(String.valueOf(renderer.currentPostEffect()));
+		if (shouldRun && !active) {
+			ByteClientGameRendererBridge.setPostEffect(renderer, MOTION_BLUR_RENDERER_ID);
+		} else if (!shouldRun && active) {
+			renderer.clearPostEffect();
+		}
 	}
 
 	private static void updatePerformanceMode(Minecraft client) {

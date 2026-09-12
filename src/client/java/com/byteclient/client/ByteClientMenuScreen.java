@@ -420,7 +420,7 @@ public class ByteClientMenuScreen extends Screen {
 	private float animationProgress(float delta) {
 		int duration = ByteClientModules.animationDurationTicks();
 		if (ByteClientModules.animationStyle() == 0 || duration <= 0) {
-			return 1.0f;
+			return closing ? 0.0f : 1.0f;
 		}
 		float raw = Math.min(1.0f, (animationTick + delta) / duration);
 		float eased = raw * raw * (3.0f - 2.0f * raw);
@@ -435,10 +435,10 @@ public class ByteClientMenuScreen extends Screen {
 	private void applyAnimation(GuiGraphics guiGraphics, float progress) {
 		int style = ByteClientModules.animationStyle();
 		if (style == 2 || style == 4) {
-			guiGraphics.pose().translate(0.0f, (1.0f - progress) * this.height * 0.08f);
+			guiGraphics.pose().translate(0.0f, (1.0f - progress) * this.height);
 		}
 		if (style == 3 || style == 5) {
-			float scale = 0.92f + progress * 0.08f;
+			float scale = progress;
 			guiGraphics.pose().scaleAround(scale, this.width / 2.0f, this.height / 2.0f);
 		}
 	}

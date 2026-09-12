@@ -27,13 +27,6 @@ vec3 notGamma(vec3 color) {
 }
 
 void main() {
-    // Fullbright UB uses the same approach as the supplied pack: the complete
-    // lightmap is saturated to white while the module's gamma sentinel is set.
-    if (lightmapInfo.BrightnessFactor > 1.0f) {
-        fragColor = vec4(1.0);
-        return;
-    }
-
     float block_brightness = get_brightness(floor(texCoord.x * 16) / 15) * lightmapInfo.BlockFactor;
     float sky_brightness = get_brightness(floor(texCoord.y * 16) / 15) * lightmapInfo.SkyFactor;
 
@@ -66,7 +59,7 @@ void main() {
 
     color = clamp(color, 0.0, 1.0);
     vec3 notGammaColor = notGamma(color);
-    color = mix(color, notGammaColor, lightmapInfo.BrightnessFactor);
+    color = mix(color, notGammaColor, clamp(lightmapInfo.BrightnessFactor, 0.0, 1.0));
     color = mix(color, vec3(0.75), 0.04);
     fragColor = vec4(color, 1.0);
 }
