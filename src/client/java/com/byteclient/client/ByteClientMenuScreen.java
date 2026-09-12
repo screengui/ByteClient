@@ -34,7 +34,7 @@ public class ByteClientMenuScreen extends Screen {
 	private int selectedTab;
 	private int hoveredModule = -1;
 	private int moduleScroll;
-	private int animationTick;
+	private long animationStartNanos = System.nanoTime();
 	private boolean closing;
 
 
@@ -46,7 +46,7 @@ public class ByteClientMenuScreen extends Screen {
 	public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
 		RED = ByteClientModules.accentColor();
 		RED_DARK = ByteClientModules.accentDarkColor();
-		float animation = animationProgress(delta);
+		float animation = animationProgress();
 		guiGraphics.pose().pushMatrix();
 		applyAnimation(guiGraphics, animation);
 		guiGraphics.fill(0, 0, this.width, this.height, BACKGROUND);
@@ -101,6 +101,9 @@ public class ByteClientMenuScreen extends Screen {
 		if (usesFade()) {
 			int alpha = Math.max(0, Math.min(190, Math.round((1.0f - animation) * 190.0f)));
 			guiGraphics.fill(0, 0, this.width, this.height, (alpha << 24) | 0x0010141A);
+		}
+		if (closing && animationComplete()) {
+			Minecraft.getInstance().setScreen(null);
 		}
 	}
 
@@ -405,26 +408,21 @@ public class ByteClientMenuScreen extends Screen {
 		return Math.max(min, Math.min(max, value));
 	}
 
-	@Override
-	public void tick() {
-		if (closing) {
-			animationTick++;
-			if (animationTick >= ByteClientModules.animationDurationTicks()) {
-				Minecraft.getInstance().setScreen(null);
-			}
-		} else {
-			animationTick = Math.min(ByteClientModules.animationDurationTicks(), animationTick + 1);
-		}
-	}
-
-	private float animationProgress(float delta) {
+	private float animationProgress() {
 		int duration = ByteClientModules.animationDurationTicks();
 		if (ByteClientModules.animationStyle() == 0 || duration <= 0) {
 			return closing ? 0.0f : 1.0f;
 		}
-		float raw = Math.min(1.0f, (animationTick + delta) / duration);
+		double durationNanos = duration * 50_000_000.0D;
+		float raw = (float) Math.min(1.0D, Math.max(0.0D,
+				(System.nanoTime() - animationStartNanos) / durationNanos));
 		float eased = raw * raw * (3.0f - 2.0f * raw);
 		return closing ? 1.0f - eased : eased;
+	}
+
+	private boolean animationComplete() {
+		int duration = ByteClientModules.animationDurationTicks();
+		return duration <= 0 || System.nanoTime() - animationStartNanos >= duration * 50_000_000L;
 	}
 
 	private boolean usesFade() {
@@ -469,6 +467,6 @@ public class ByteClientMenuScreen extends Screen {
 			return;
 		}
 		closing = true;
-		animationTick = 0;
+		animationStartNanos = System.nanoTime();
 	}
 }

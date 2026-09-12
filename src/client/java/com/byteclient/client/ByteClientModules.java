@@ -40,7 +40,7 @@ public final class ByteClientModules {
 			true, true, false, true, true, false, true, false,
 			false, false, false, false, false, true, false, false
 	};
-	private static final int[] FULLBRIGHT_LEVELS = {1, 2, 4};
+	private static final int[] FULLBRIGHT_MODES = {0, 1};
 	private static final int[] HUD_OPACITIES = {60, 80, 100};
 	private static final int[] PERFORMANCE_LEVELS = {1, 2, 3};
 	private static final int[] MOTION_BLUR_LEVELS = {2, 4, 6};
@@ -64,7 +64,7 @@ private static final int[] ANIMATION_DURATIONS = {8, 12, 18};
 	private static boolean originalAmbientOcclusion;
 	private static boolean performanceCaptured;
 	private static boolean noFogApplied;
-	private static int fullbrightLevel = 4;
+	private static int fullbrightMode;
 private static final int[] HUD_OPACITIES_BY_MODULE = {
 		80, 80, 80, 80, 80, 80, 80, 80,
 		80, 80, 80, 80, 80, 80, 80, 80
@@ -152,7 +152,7 @@ private static boolean cameraSampled;
 				case 2 -> "Disable shadows";
 				default -> "Disable ambient occlusion";
 			};
-			case 2 -> "Gamma power";
+			case 2 -> "Fullbright mode";
 			case 4 -> setting == 0 ? "HUD opacity" : "Armor layout";
 			case 7 -> "Optimization profile";
 			case 8 -> "Blur radius";
@@ -170,7 +170,7 @@ private static boolean cameraSampled;
 				case 2 -> onOff(fpsDisableEntityShadows);
 				default -> onOff(fpsDisableAmbientOcclusion);
 			};
-			case 2 -> fullbrightLevel + "x";
+			case 2 -> fullbrightMode == 0 ? "Gamma" : "Night Vision";
 			case 4 -> setting == 0 ? HUD_OPACITIES_BY_MODULE[module] + "%" : armorOrientation == 0 ? "Vertical" : "Horizontal";
 			case 7 -> performanceProfile();
 			case 8 -> motionBlurRadius + " px";
@@ -188,7 +188,7 @@ private static boolean cameraSampled;
 				else if (setting == 2) fpsDisableEntityShadows = !fpsDisableEntityShadows;
 				else fpsDisableAmbientOcclusion = !fpsDisableAmbientOcclusion;
 			}
-			case 2 -> fullbrightLevel = nextValue(fullbrightLevel, FULLBRIGHT_LEVELS);
+			case 2 -> fullbrightMode = nextValue(fullbrightMode, FULLBRIGHT_MODES);
 			case 4 -> {
 				if (setting == 0) HUD_OPACITIES_BY_MODULE[module] =
 						nextValue(HUD_OPACITIES_BY_MODULE[module], HUD_OPACITIES);
@@ -237,11 +237,16 @@ private static boolean cameraSampled;
 		return MODULE_DESCRIPTIONS[module];
 	}
 
-	public static float applyFullbrightGamma(float inGameGamma) {
-		if (!ENABLED[2]) {
-			return inGameGamma;
-		}
-		return Math.max(inGameGamma, fullbrightLevel * 0.25f);
+	public static boolean isFullbrightEnabled() {
+		return ENABLED[2];
+	}
+
+	public static boolean isFullbrightNightVision() {
+		return ENABLED[2] && fullbrightMode == 1;
+	}
+
+	public static double fullbrightGamma() {
+		return 1500.0D;
 	}
 
 	public static int currentPing(Minecraft client) {
@@ -776,7 +781,7 @@ private static boolean cameraSampled;
 		for (int module = 0; module < ENABLED.length; module++) {
 			ENABLED[module] = validBoolean(settings.getProperty("module." + module + ".enabled"), ENABLED[module]);
 		}
-		fullbrightLevel = validValue(settings.getProperty("fullbrightLevel"), FULLBRIGHT_LEVELS, fullbrightLevel);
+		fullbrightMode = validValue(settings.getProperty("fullbrightMode"), FULLBRIGHT_MODES, fullbrightMode);
 		int sharedOpacity = validValue(settings.getProperty("hudOpacity"), HUD_OPACITIES, 80);
 		for (int module : HUD_MODULES) {
 			HUD_OPACITIES_BY_MODULE[module] = validValue(
@@ -822,7 +827,7 @@ private static boolean cameraSampled;
 		for (int module = 0; module < ENABLED.length; module++) {
 			settings.setProperty("module." + module + ".enabled", Boolean.toString(ENABLED[module]));
 		}
-		settings.setProperty("fullbrightLevel", Integer.toString(fullbrightLevel));
+		settings.setProperty("fullbrightMode", Integer.toString(fullbrightMode));
 		settings.setProperty("hudOpacity", Integer.toString(HUD_OPACITIES_BY_MODULE[HUD_MODULES[0]]));
 		for (int module : HUD_MODULES) {
 			settings.setProperty("hudOpacity." + module, Integer.toString(HUD_OPACITIES_BY_MODULE[module]));

@@ -1,4 +1,4 @@
-[04:25:53] [Test worker/WARN]: Unable to load HUD positions; using defaults
+[07:43:27] [Test worker/WARN]: Unable to load HUD positions; using defaults
 java.lang.IllegalArgumentException: Malformed \uxxxx encoding.
 	at java.base/java.util.Properties.loadConvert(Properties.java:664)
 	at java.base/java.util.Properties.load0(Properties.java:458)
