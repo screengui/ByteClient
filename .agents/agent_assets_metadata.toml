@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "aAMUxWLVQA2wQ9Xqrqbvq"
+uri = "file://build/libs/byte-client-1.0.0.jar"
+type = "unspecified"
+title = "Byte Client 1.0.0 final JAR"
+description = "Final Java 21 Fabric 1.21.11 build with configuration migration, persistent module states, customizable Low Fire and Low Shield, scrollable settings, motion-aware blur, UI animations, theme support, and per-HUD opacity."
+logical_id = "8ded6019-3b56-4391-a9b5-8d9fdd7a2cc8"
+content_hash = "sha256:b9073f8f527b3b737ef897260a7a201937e035415d36756db5a0547a2ccc32f1"
+size = 63709
+mtime_ms = 1789125031011
+storage_uri = "gcs://replit-rams-assets-worf/rams/assets/repl:7dd603af-43f2-41e3-8d55-aaed0e03ff26/8ded6019-3b56-4391-a9b5-8d9fdd7a2cc8/4a7d5d43-eb2e-42c2-a322-1c8d8b53965a"
+storage_version_token = "1789125059369303"
+content_type = "application/octet-stream"
