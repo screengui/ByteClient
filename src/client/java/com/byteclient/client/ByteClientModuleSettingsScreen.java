@@ -19,6 +19,7 @@ public final class ByteClientModuleSettingsScreen extends Screen {
 	private final int module;
 	private int scroll;
 	private boolean draggingScrollbar;
+	private boolean draggingMotionBlurStrength;
 
 	public ByteClientModuleSettingsScreen(Screen parent, int module) {
 		super(Component.literal(ByteClientModules.moduleName(module) + " Settings"));
@@ -52,9 +53,13 @@ public final class ByteClientModuleSettingsScreen extends Screen {
 		int settingsCount = ByteClientModules.moduleSettingCount(module);
 		for (int setting = 0; setting < settingsCount; setting++) {
 			int rowTop = settingTop + setting * 54 - scroll;
-			drawButton(guiGraphics, buttonLeft, rowTop, buttonRight, rowTop + 42,
-					ByteClientModules.moduleSettingName(module, setting),
-					ByteClientModules.moduleSettingValue(module, setting), RED_DARK);
+			if (module == 8 && setting == 0) {
+				drawMotionBlurStrength(guiGraphics, buttonLeft, rowTop, buttonRight, rowTop + 42);
+			} else {
+				drawButton(guiGraphics, buttonLeft, rowTop, buttonRight, rowTop + 42,
+						ByteClientModules.moduleSettingName(module, setting),
+						ByteClientModules.moduleSettingValue(module, setting), RED_DARK);
+			}
 		}
 		int enabledTop = settingTop + settingsCount * 54 - scroll;
 		drawButton(guiGraphics, buttonLeft, enabledTop, buttonRight, enabledTop + 42,
@@ -93,6 +98,21 @@ public final class ByteClientModuleSettingsScreen extends Screen {
 		guiGraphics.drawString(this.font, "CLICK TO CHANGE", left + 16, top + 25, MUTED, false);
 	}
 
+	private void drawMotionBlurStrength(GuiGraphics graphics, int left, int top, int right, int bottom) {
+		graphics.fill(left, top, right, bottom, RED_DARK);
+		graphics.fill(left, top, Math.min(left + 3, right), bottom, RED);
+		graphics.drawString(this.font, "Strength", left + 16, top + 10, TEXT, true);
+		int trackLeft = left + 120;
+		int trackRight = right - 52;
+		int trackY = top + 20;
+		int value = ByteClientModules.motionBlurStrengthPercent();
+		int handleX = trackLeft + (trackRight - trackLeft) * value / 100;
+		graphics.fill(trackLeft, trackY - 2, trackRight, trackY + 2, BORDER);
+		graphics.fill(trackLeft, trackY - 2, handleX, trackY + 2, RED);
+		graphics.fill(handleX - 3, trackY - 6, handleX + 4, trackY + 7, TEXT);
+		graphics.drawString(this.font, value + "%", right - 42, top + 10, RED, true);
+	}
+
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
 		PanelBounds panel = panelBounds();
@@ -117,6 +137,11 @@ public final class ByteClientModuleSettingsScreen extends Screen {
 			for (int setting = 0; setting < settingsCount; setting++) {
 				int rowTop = settingTop + setting * 54 - scroll;
 				if (inside(event, buttonLeft, buttonRight, rowTop, rowTop + 42)) {
+					if (module == 8 && setting == 0) {
+						draggingMotionBlurStrength = true;
+						updateMotionBlurStrength(event.x(), buttonLeft, buttonRight);
+						return true;
+					}
 					ByteClientModules.cycleModuleSetting(module, setting);
 					return true;
 				}
@@ -159,6 +184,11 @@ public final class ByteClientModuleSettingsScreen extends Screen {
 
 	@Override
 	public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+		if (draggingMotionBlurStrength && event.button() == 0) {
+				PanelBounds panel = panelBounds();
+				updateMotionBlurStrength(event.x(), panel.left() + 24, panel.right() - 24);
+				return true;
+		}
 		if (draggingScrollbar && event.button() == 0) {
 			PanelBounds panel = panelBounds();
 			int settingTop = panel.top() + 88;
@@ -176,8 +206,16 @@ public final class ByteClientModuleSettingsScreen extends Screen {
 	public boolean mouseReleased(MouseButtonEvent event) {
 		if (event.button() == 0) {
 			draggingScrollbar = false;
+			draggingMotionBlurStrength = false;
 		}
 		return super.mouseReleased(event);
+	}
+
+	private void updateMotionBlurStrength(double mouseX, int left, int right) {
+		int trackLeft = left + 120;
+		int trackRight = right - 52;
+		int percent = (int) Math.round((mouseX - trackLeft) * 100.0 / Math.max(1, trackRight - trackLeft));
+		ByteClientModules.setMotionBlurStrengthPercent(percent);
 	}
 
 	private void updateScrollFromMouse(double mouseY, int top, int viewportHeight, int contentHeight, int maxScroll) {

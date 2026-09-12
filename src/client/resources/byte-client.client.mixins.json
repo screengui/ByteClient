@@ -7,7 +7,7 @@
 		"ByteClientGammaOptionMixin",
 		"ByteClientNightVisionMixin",
 		"ByteClientGameRendererMixin",
-		"ByteClientGameRendererAccessor",
+		"ByteClientLevelRendererMixin",
     "ByteClientItemInHandRendererMixin",
     "ByteClientScreenEffectRendererMixin"
 	],

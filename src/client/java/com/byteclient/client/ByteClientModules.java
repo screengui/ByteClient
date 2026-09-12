@@ -43,7 +43,6 @@ public final class ByteClientModules {
 	private static final int[] FULLBRIGHT_MODES = {0, 1};
 	private static final int[] HUD_OPACITIES = {60, 80, 100};
 	private static final int[] PERFORMANCE_LEVELS = {1, 2, 3};
-	private static final int[] MOTION_BLUR_LEVELS = {2, 4, 6};
 private static final int[] LOW_FIRE_LEVELS = {25, 50, 75};
 private static final int[] LOW_SHIELD_LEVELS = {20, 35, 50};
 private static final int[] ANIMATION_STYLES = {0, 1, 2, 3, 4, 5};
@@ -71,7 +70,7 @@ private static final int[] HUD_OPACITIES_BY_MODULE = {
 };
 	private static int performanceLevel = 3;
 	private static int armorOrientation;
-	private static int motionBlurRadius = 4;
+	private static int motionBlurStrengthPercent = 50;
 	private static int themeIndex;
 private static int lowFireLevel = 50;
 private static int lowShieldLevel = 35;
@@ -88,7 +87,6 @@ private static float previousCameraYaw;
 private static float previousCameraPitch;
 private static float motionBlurStrength;
 private static boolean cameraSampled;
-	private static final String MOTION_BLUR_RENDERER_ID = "byte-client:motion_blur";
 
 	private ByteClientModules() {
 	}
@@ -155,7 +153,7 @@ private static boolean cameraSampled;
 			case 2 -> "Fullbright mode";
 			case 4 -> setting == 0 ? "HUD opacity" : "Armor layout";
 			case 7 -> "Optimization profile";
-			case 8 -> "Blur radius";
+			case 8 -> "Strength";
 			case 11 -> "Fire reduction";
 			case 12 -> "Shield reduction";
 			default -> "HUD opacity";
@@ -173,7 +171,7 @@ private static boolean cameraSampled;
 			case 2 -> fullbrightMode == 0 ? "Gamma" : "Night Vision";
 			case 4 -> setting == 0 ? HUD_OPACITIES_BY_MODULE[module] + "%" : armorOrientation == 0 ? "Vertical" : "Horizontal";
 			case 7 -> performanceProfile();
-			case 8 -> motionBlurRadius + " px";
+			case 8 -> motionBlurStrengthPercent + "%";
 			case 11 -> lowFireLevel + "%";
 			case 12 -> lowShieldLevel + "%";
 			default -> isHudModule(module) ? HUD_OPACITIES_BY_MODULE[module] + "%" : "";
@@ -197,9 +195,7 @@ private static boolean cameraSampled;
 			case 7 -> {
 				performanceLevel = nextValue(performanceLevel, PERFORMANCE_LEVELS);
 			}
-			case 8 -> {
-				if (setting == 0) motionBlurRadius = nextValue(motionBlurRadius, MOTION_BLUR_LEVELS);
-			}
+			case 8 -> setMotionBlurStrengthPercent((motionBlurStrengthPercent + 10) % 110);
 			case 11 -> lowFireLevel = nextValue(lowFireLevel, LOW_FIRE_LEVELS);
 			case 12 -> lowShieldLevel = nextValue(lowShieldLevel, LOW_SHIELD_LEVELS);
 			default -> {
@@ -278,16 +274,34 @@ private static boolean cameraSampled;
 		return ENABLED[8];
 	}
 
-	public static float motionBlurRadius() {
-		return motionBlurRadius;
+	public static float motionBlurStrength() {
+		return Math.min(1.0f, Math.max(0.0f, motionBlurStrength));
+	}
+
+	public static int motionBlurStrengthPercent() {
+		return motionBlurStrengthPercent;
+	}
+
+	public static float motionBlurBlendFactor() {
+		return Math.min(2.0f, motionBlurStrengthPercent / 50.0f);
+	}
+
+	public static void setMotionBlurStrengthPercent(int percent) {
+		motionBlurStrengthPercent = Math.max(0, Math.min(100, percent));
+		saveModuleSettings();
+	}
+
+	public static void captureMotionFrame(org.joml.Matrix4f modelView, org.joml.Matrix4f projection,
+			net.minecraft.world.phys.Vec3 cameraPosition) {
+		ByteClientMotionBlurRenderer.capture(modelView, projection, cameraPosition);
+	}
+
+	public static void onWorldRendered(Minecraft client) {
+		ByteClientMotionBlurRenderer.render(client);
 	}
 
 	public static boolean shouldApplyMotionBlur() {
 		return ENABLED[8] && motionBlurStrength > 0.04f;
-	}
-
-	public static int activeMotionBlurRadius() {
-		return Math.max(1, Math.round(motionBlurRadius * motionBlurStrength));
 	}
 
 	public static boolean shouldLowerShield(ItemStack stack) {
@@ -446,19 +460,7 @@ private static boolean cameraSampled;
 		updatePerformanceMode(client);
 		updateNoFog();
 		updateMotionBlur(client);
-		updateMotionBlurEffect(client);
 		updateSprint(client);
-	}
-
-	private static void updateMotionBlurEffect(Minecraft client) {
-		var renderer = client.gameRenderer;
-		boolean shouldRun = ENABLED[8] && client.level != null && client.screen == null;
-		boolean active = MOTION_BLUR_RENDERER_ID.equals(String.valueOf(renderer.currentPostEffect()));
-		if (shouldRun && !active) {
-			ByteClientGameRendererBridge.setPostEffect(renderer, MOTION_BLUR_RENDERER_ID);
-		} else if (!shouldRun && active) {
-			renderer.clearPostEffect();
-		}
 	}
 
 	private static void updatePerformanceMode(Minecraft client) {
@@ -789,7 +791,8 @@ private static boolean cameraSampled;
 		}
 		performanceLevel = validValue(settings.getProperty("performanceLevel"), PERFORMANCE_LEVELS, performanceLevel);
 		armorOrientation = validValue(settings.getProperty("armorOrientation"), new int[]{0, 1}, armorOrientation);
-		motionBlurRadius = validValue(settings.getProperty("motionBlurRadius"), MOTION_BLUR_LEVELS, motionBlurRadius);
+		motionBlurStrengthPercent = validPercent(settings.getProperty("motionBlurStrength"),
+				motionBlurStrengthPercent);
 		themeIndex = validValue(settings.getProperty("themeIndex"), new int[]{0, 1, 2, 3}, themeIndex);
 		lowFireLevel = validValue(settings.getProperty("lowFireLevel"), LOW_FIRE_LEVELS, lowFireLevel);
 		lowShieldLevel = validValue(settings.getProperty("lowShieldLevel"), LOW_SHIELD_LEVELS, lowShieldLevel);
@@ -818,6 +821,17 @@ private static boolean cameraSampled;
 		return fallback;
 	}
 
+	private static int validPercent(String value, int fallback) {
+		if (value == null) {
+			return fallback;
+		}
+		try {
+			return Math.max(0, Math.min(100, Integer.parseInt(value.trim())));
+		} catch (NumberFormatException ignored) {
+			return fallback;
+		}
+	}
+
 	private static boolean validBoolean(String value, boolean fallback) {
 		return value == null ? fallback : Boolean.parseBoolean(value.trim());
 	}
@@ -834,7 +848,7 @@ private static boolean cameraSampled;
 		}
 		settings.setProperty("performanceLevel", Integer.toString(performanceLevel));
 		settings.setProperty("armorOrientation", Integer.toString(armorOrientation));
-		settings.setProperty("motionBlurRadius", Integer.toString(motionBlurRadius));
+		settings.setProperty("motionBlurStrength", Integer.toString(motionBlurStrengthPercent));
 		settings.setProperty("themeIndex", Integer.toString(themeIndex));
 		settings.setProperty("lowFireLevel", Integer.toString(lowFireLevel));
 		settings.setProperty("lowShieldLevel", Integer.toString(lowShieldLevel));
