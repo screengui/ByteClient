@@ -3,7 +3,11 @@
 	"package": "com.byteclient.client.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"ExampleClientMixin"
+		"ExampleClientMixin",
+    "ByteClientLightTextureMixin",
+    "ByteClientGameRendererMixin",
+    "ByteClientItemInHandRendererMixin",
+    "ByteClientScreenEffectRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
